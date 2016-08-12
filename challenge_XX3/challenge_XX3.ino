@@ -1,3 +1,4 @@
+//------------------------------------Game Settings-------------------------------------------------------
 const int BETWEEN_ATTEMPT_DELAY_MIN = 500;
 const int BETWEEN_ATTEMPT_DELAY_MAX = 3000;
 const int LEVEL_1_SPEED = 600;
@@ -5,8 +6,8 @@ const int LEVEL_2_SPEED = 450;
 const int LEVEL_3_SPEED = 300;
 const int LEVEL_4_SPEED = 200;
 const int GAME_LENGTH = 20000;  //Length of each game (in milliseconds) in limited time mode
-
-int switchPin = 5;
+//------------------------------------Defining Variables-------------------------------------------------------
+int switchPin = 5;   //Pin for the switch to switch between two modes
 int button1Pin = 6;
 int button2Pin = 7;
 int button3Pin = 8;
@@ -16,15 +17,16 @@ int led2Pin = 11;
 int led3Pin = 12;
 int led4Pin = 13;
 
-int button[] = {0, 0, 0, 0};
+int button[] = {0, 0, 0, 0};  //An array that stores when the specific button is pressed, the data on the corresponding index will be changed to 1
 
-int currentLevelSpeed;
-int totalCounter = 0;
-int successCounter = 0;
-unsigned long gameLastTime = 0;
-int mode;
-boolean alive = true;
+int currentLevelSpeed;        //Stores the speed for the current level selected
+int totalCounter = 0;         //Stores the total "mole" come out
+int successCounter = 0;       //Stores the number of "mole" player got
+unsigned long gameLastTime = 0;  //Stores the time passed in that round of the game in milliseconds
+int mode;                        //Stores the mode (output of the switch)
+boolean alive = true;            //In survival mode, after player missed one "mole", this variable will be set to false
 
+//----------------------------------Game Initiation-----------------------------------------------------------------
 void setup() {
   Serial.begin(9600);
   for (int i = button1Pin; i <= button4Pin; i++)  //Setting button pin
@@ -35,11 +37,11 @@ void setup() {
   mode = digitalRead(switchPin);                  //Switch to Left = 1; to Right = 0
   levelSelect();                                  //Run level selection for user before start game
 }
-
+//-----------------------------------Game Loop-----------------------------------------------------------------------
 void loop() {
   delay(2000);                   //Delay before firt "mole" come out, to give player some time to react after they press restart/ selected level
   mode = digitalRead(switchPin); //Left = 1; Right = 0
-//  Serial.print("mode = ");
+//  Serial.print("mode = ");     //Print what mode is selected. Switch debug use.
 //  Serial.println(mode);
   game();
   resultPrintAndReset();
@@ -47,63 +49,86 @@ void loop() {
 
 
 }
-
+//-----------------------------Modular Functions--------------------------------------------------------------
 void game() {
-  if (mode == 1) {
-    while (gameLastTime <= GAME_LENGTH) {
-      resetButtonStatus();
-      delayBetweenAttempts();
-      singleAttemptGame();
+  if (mode == 1) {     //If the switch is reading 1 (put to the left), timing mode is selected, run game in timing mode
+    while (gameLastTime <= GAME_LENGTH) {   //With in the time set in the game settings, game continue looping
+      resetButtonStatus();                  //Reset the button array (which stores the button status before)
+      delayBetweenAttempts();               //Random delay between two "moles" come out
+      singleAttemptGame();                  //The game for single "mole" comming out and read button hitting, etc. See comments in the function for more details
     }
   }
-  else {
+  else {               //If the switch is reading 0 (put to the right), survival mode is selected, run game in survival mode
     while (alive) {                 //Continue the loop until miss a "mole", which let the alive = false
-      resetButtonStatus();
+      resetButtonStatus();          //Apart from the requirements for game to continue (the parameter in the while function), other gaming process are the same
       delayBetweenAttempts();
       singleAttemptGame();
     }
   }
 }
 
+void levelSelect() {
+  while (1) {                        //Blink all LEDs until a button is pressed
+    blinkAll(200);
+    if ((digitalRead(button1Pin) == 1)) {
+      currentLevelSpeed = LEVEL_1_SPEED;    //Change the current level speed to the level 1 speed set as game settings
+      break;                                //Break out of the while loop
+    }
+    else if ((digitalRead(button2Pin) == 1)) {
+      currentLevelSpeed = LEVEL_2_SPEED;
+      break;
+    }
+    else if ((digitalRead(button3Pin) == 1)) {
+      currentLevelSpeed = LEVEL_3_SPEED;
+      break;
+    }
+    else if ((digitalRead(button4Pin) == 1)) {
+      currentLevelSpeed = LEVEL_4_SPEED;
+      break;
+    }
+  }
+}
+
+
 void resultPrintAndReset() {
-  if (mode == 1) {
+  if (mode == 1) {                               //In timing mode, print result this way
     Serial.print("Game Ended! You got ");
     Serial.print(successCounter);
     Serial.print(" out of total ");
     Serial.println(totalCounter);
-    successCounter = 0;
+    successCounter = 0;                         //Clear and Reset the counter after the game ended
     totalCounter = 0;
     gameLastTime = 0;
-    delay(2000);
+    delay(2000);                              //Give some time for the player to rest before next game
   }
 
-  else {
+  else {                                      //In survival mode, print result this way
     Serial.print("Game Ended! You survived ");
     Serial.print(gameLastTime / 1000);
     Serial.print(" seconds, and got ");
     Serial.print(successCounter);
     Serial.println("moles! Press to restart.");
-    successCounter = 0;
+    successCounter = 0;                        //Clear and Reset the counter after the game ended
     totalCounter = 0;
     gameLastTime = 0;
-    delay(2000);
+    delay(2000);                              //Give some time for the player to rest before next game
   }
 
 }
 
 void singleAttemptGame() {
-  int ledNo = random(led1Pin, led4Pin + 1);              //https://www.arduino.cc/en/Reference/random
-  totalCounter ++;
+  int ledNo = random(led1Pin, led4Pin + 1);       //Choose a random LED pin number between LED1's pin and LED4's pin. See https://www.arduino.cc/en/Reference/random for more details
+  totalCounter ++;                                //Add one to the variable that stores the total number of "moles" came out
 //  Serial.print("Total");
 //  Serial.println(totalCounter);  //Debug use
-  digitalWrite(ledNo, HIGH);
-  gameLastTime += delayWithButtonReading(currentLevelSpeed);
-  digitalWrite(ledNo, LOW);
-  if (button[ledNo - led1Pin] == 1) {   //Gotya, mole (ledNo - led1Pin means the corresponding index in array button, for example, led1 is the first element, index == 0 so when the mole is on LED1, ledNo = led1Pin, so that ledNo - led1Pin == 0)
-    successCounter ++;
+  digitalWrite(ledNo, HIGH);                      //Turn on the LED for the specific "mole"
+  gameLastTime += delayWithButtonReading(currentLevelSpeed);  //Add the delay time to the gameLastTime, and delay. This statement will run function delayWithButtonReading(...), the function will return a value for the time spent on this process. Delay is included in this function. See this function below for more detail.
+  digitalWrite(ledNo, LOW);                       //After the delay, turn the specific LED off
+  if (button[ledNo - led1Pin] == 1) {   //Read the array button to see if the mole is captured. The array will be changed during executing the function delayWithButtonReading(...), once a button is pressed (ledNo - led1Pin means the corresponding index in array button, for example, led1 is the first element, index == 0 so when the mole is on LED1, ledNo = led1Pin, so that ledNo - led1Pin == 0)
+    successCounter ++;                            //Add one to the variable that stores the total number of "moles" successfully got
 //    Serial.print("Get");
 //    Serial.println(successCounter);   //Debug use
-    blinkLed(ledNo, 50, 6);
+    blinkLed(ledNo, 50, 6);                       //Blink the "mole" six times to indicate that "mole" is got
   }
 
   if (successCounter != totalCounter) //Once one mole is missed, that caused success mole number != total mole number, set alive = false to end this game
@@ -161,27 +186,7 @@ int delayWithButtonReading(int delayTime) {
 
 }
 
-void levelSelect() {
-  while (1) {
-    blinkAll(200);
-    if ((digitalRead(button1Pin) == 1)) {
-      currentLevelSpeed = LEVEL_1_SPEED;
-      break;
-    }
-    else if ((digitalRead(button2Pin) == 1)) {
-      currentLevelSpeed = LEVEL_2_SPEED;
-      break;
-    }
-    else if ((digitalRead(button3Pin) == 1)) {
-      currentLevelSpeed = LEVEL_3_SPEED;
-      break;
-    }
-    else if ((digitalRead(button4Pin) == 1)) {
-      currentLevelSpeed = LEVEL_4_SPEED;
-      break;
-    }
-  }
-}
+
 
 void clickForNextGame() {
   while (digitalRead(button1Pin) == 0 && digitalRead(button2Pin) == 0 && digitalRead(button3Pin) == 0 && digitalRead(button4Pin) == 0)
