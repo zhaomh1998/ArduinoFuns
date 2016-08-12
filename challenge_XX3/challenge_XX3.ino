@@ -4,6 +4,7 @@ const int LEVEL_1_SPEED = 600;
 const int LEVEL_2_SPEED = 450;
 const int LEVEL_3_SPEED = 300;
 const int LEVEL_4_SPEED = 200;
+const int GAME_LENGTH = 20000;  //Length of each game (in milliseconds) in limited time mode
 
 int switchPin = 5;
 int button1Pin = 6;
@@ -26,20 +27,20 @@ boolean alive = true;
 
 void setup() {
   Serial.begin(9600);
-  for (int i = button1Pin; i <= button4Pin; i++)
+  for (int i = button1Pin; i <= button4Pin; i++)  //Setting button pin
     pinMode(i, INPUT);
-  for (int i = led1Pin; i <= led4Pin; i++)
+  for (int i = led1Pin; i <= led4Pin; i++)        //Setting LED pin
     pinMode(i, OUTPUT);
-  pinMode(switchPin, INPUT);
-  mode = digitalRead(switchPin); //Left = 1; Right = 0
-  levelSelect();
+  pinMode(switchPin, INPUT);                      //Setting the pin to the switch
+  mode = digitalRead(switchPin);                  //Switch to Left = 1; to Right = 0
+  levelSelect();                                  //Run level selection for user before start game
 }
 
 void loop() {
-  delay(2000);
+  delay(2000);                   //Delay before firt "mole" come out, to give player some time to react after they press restart/ selected level
   mode = digitalRead(switchPin); //Left = 1; Right = 0
-  Serial.print("mode = ");
-  Serial.println(mode);
+//  Serial.print("mode = ");
+//  Serial.println(mode);
   game();
   resultPrintAndReset();
   clickForNextGame();
@@ -49,14 +50,14 @@ void loop() {
 
 void game() {
   if (mode == 1) {
-    while (gameLastTime <= 10000) {                        //##############TODO change it to 40s
+    while (gameLastTime <= GAME_LENGTH) {
       resetButtonStatus();
       delayBetweenAttempts();
       singleAttemptGame();
     }
   }
   else {
-    while (alive) {
+    while (alive) {                 //Continue the loop until miss a "mole", which let the alive = false
       resetButtonStatus();
       delayBetweenAttempts();
       singleAttemptGame();
@@ -93,19 +94,19 @@ void resultPrintAndReset() {
 void singleAttemptGame() {
   int ledNo = random(led1Pin, led4Pin + 1);              //https://www.arduino.cc/en/Reference/random
   totalCounter ++;
-  Serial.print("Total");
-  Serial.println(totalCounter);
+//  Serial.print("Total");
+//  Serial.println(totalCounter);  //Debug use
   digitalWrite(ledNo, HIGH);
   gameLastTime += delayWithButtonReading(currentLevelSpeed);
   digitalWrite(ledNo, LOW);
-  if (button[ledNo - 10] == 1) {   //Gotya, mole
+  if (button[ledNo - led1Pin] == 1) {   //Gotya, mole (ledNo - led1Pin means the corresponding index in array button, for example, led1 is the first element, index == 0 so when the mole is on LED1, ledNo = led1Pin, so that ledNo - led1Pin == 0)
     successCounter ++;
-    Serial.print("Get");
-    Serial.println(successCounter);
+//    Serial.print("Get");
+//    Serial.println(successCounter);   //Debug use
     blinkLed(ledNo, 50, 6);
   }
 
-  if (successCounter != totalCounter)
+  if (successCounter != totalCounter) //Once one mole is missed, that caused success mole number != total mole number, set alive = false to end this game
     alive = false;
 }
 
@@ -114,7 +115,7 @@ void singleAttemptGame() {
 void delayBetweenAttempts() {
   int delayLength = random(BETWEEN_ATTEMPT_DELAY_MIN, BETWEEN_ATTEMPT_DELAY_MAX);
   //  Serial.print("Random delayLength = ");
-  //  Serial.println(delayLength);
+  //  Serial.println(delayLength);     //Debug use
   gameLastTime += delayLength;
   delay(delayLength);
 }
