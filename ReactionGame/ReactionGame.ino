@@ -10,7 +10,7 @@
  */
 // -----GAME SETTING----------------------------------------------
 const double DEFAULTSPEED = 350.0; //Speed for level 1
-const double MULTIPLE = 0.66;  //multiple for steeping to next level
+const double MULTIPLE = 0.66;  //speedForCurrentLevel * MULTIPLE = speedForNextLevel
 //------Variables------------------------------------------------
 int led1Pin = 1;
 int led2Pin = 2;
@@ -50,7 +50,7 @@ void setLevel() { //No.1 Set level
   while (1) {
     flash(led, speedd);
     if (digitalRead(buttonPin) == 1) {     //If button pressed
-      int holdTime = buttonHoldTime(1500); //Retrieve button hold time
+      int holdTime = buttonHoldTime(1500); //Retrieve button hold time and assign to variable holdTime
       if (holdTime == 1500) {          //If reach maximum time limit, meaning that the current level is chosen
         break;                         //Lvl set complete. Break out of the loop and start the game!
       }
