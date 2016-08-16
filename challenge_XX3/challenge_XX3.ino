@@ -1,3 +1,5 @@
+//#####Whack-A-Mole on Arduino#####
+//#####Designed by Staff in ECE5, Coded by Scott.#####
 //------------------------------------Game Settings-------------------------------------------------------
 const int BETWEEN_ATTEMPT_DELAY_MIN = 500;
 const int BETWEEN_ATTEMPT_DELAY_MAX = 3000;
@@ -137,7 +139,7 @@ void singleAttemptGame() {
 
 
 
-void delayBetweenAttempts() {
+void delayBetweenAttempts() {     //Randomly delay some amount of time between two "moles"
   int delayLength = random(BETWEEN_ATTEMPT_DELAY_MIN, BETWEEN_ATTEMPT_DELAY_MAX);
   //  Serial.print("Random delayLength = ");
   //  Serial.println(delayLength);     //Debug use
@@ -154,14 +156,14 @@ void blinkLed (int led, int dela, int times) {
   }
 }
 
-void resetButtonStatus() {
+void resetButtonStatus() //Reset the array button to {0, 0, 0, 0}
   for (int i = 0; i <= 3; i++)
     button[i] = 0;
 }
 
-int delayWithButtonReading(int delayTime) {
+int delayWithButtonReading(int delayTime) {  //Delay after the "mole" appears, 
   int timeDelayed = 0;
-  for (int i = 0; i < delayTime; i += 10) {
+  for (int i = 0; i < delayTime; i += 10) {  //Note down which button is pushed, and change the corresponding index on array button
     if (digitalRead(button1Pin) == 1) {
       button[0] = 1;
       break;
@@ -179,7 +181,7 @@ int delayWithButtonReading(int delayTime) {
       break;
     }
     else {
-      timeDelayed += 10;
+      timeDelayed += 10;                  //Add 10 to local variable that store the time delayed here
       delay(10);
     }
   }
@@ -189,7 +191,7 @@ int delayWithButtonReading(int delayTime) {
 
 
 void clickForNextGame() {
-  while (digitalRead(button1Pin) == 0 && digitalRead(button2Pin) == 0 && digitalRead(button3Pin) == 0 && digitalRead(button4Pin) == 0)
+  while (digitalRead(button1Pin) == 0 && digitalRead(button2Pin) == 0 && digitalRead(button3Pin) == 0 && digitalRead(button4Pin) == 0)  //Loop here while neither button is pushed, blink all LEDs
     blinkAll(200);
 }
 
